@@ -13,6 +13,7 @@
             name="answer"
             value="{{ choice }}">
         {{ choice }}
+        <input type="hidden" name="curr_question_id" value="{{question_id}}">
       </p>
       {% endfor %}
     <button>Continue</button>
