@@ -12,11 +12,12 @@ debug = DebugToolbarExtension(app)
 #put blank spaces between separate operations
 
 #lower case responses
-RESPONSES = []
+# responses = []
 
 @app.get('/')
 def survey_start_page():
     '''Shows user the title, instructions, and button to start survey'''
+
     #move clearing out responses to begin_survey
 
     title = survey.title
@@ -31,8 +32,12 @@ def survey_start_page():
 @app.post("/begin")
 def begin_survey():
     '''redirect to the first question page'''
-    global RESPONSES
-    RESPONSES = []
+
+    session["responses"] = []
+
+    # global responses
+    # responses = []
+
     return redirect ("/question/0")
 
 
@@ -42,27 +47,38 @@ def handle_question_page(question_id):
 
     #add more conditionals for accessing ids beyond size to maybe redirect back
     #to beginning
-    if question_id > len(survey.questions)-1:
-        return redirect('/completion')
-    else:
-        question = survey.questions[question_id]
 
+    track_answer_count = 0
+    print("track=", track_answer_count)
+    if track_answer_count == len(survey.questions)-1:
+        return redirect('/completion')
+
+    if question_id == track_answer_count:
+        question = survey.questions[question_id]
+        track_answer_count += 1
         return render_template("question.html",
                             question=question,
                             question_id=question_id)
+    # elif question_id > track_answer_count and question_id < track_answer_count:
+    else:
+        return redirect(f"/question/{question_id}")
 
 
 @app.post("/answer")
 def handle_answer_page():
     '''Appends answer given in previous question form to response list
     and redirect to next question'''
-    RESPONSES.append(request.form['answer'])
-    #why does this somehow double the responses variable in jinja
-    #probably cause not emptying RESPONSES globally
-    print(RESPONSES)
+
+    current_list = session["responses"]
+    current_list.append(request.form['answer'])
+    session["responses"] = current_list
+
+    print(session["responses"])
+
     #make a separate variable for line below
     #could check length of responses is less than total questions to redirect
     #to complete page
+
     return redirect(f"/question/{int(request.form['curr_question_id'])+1}")
 
 
@@ -70,8 +86,9 @@ def handle_answer_page():
 def handle_completion_page():
     '''render the completion / thank you page and pass the responses and
     corresponding questions to it'''
+
     return render_template("completion.html",
-                            responses=RESPONSES,
+                            responses=session["responses"],
                             questions=survey.questions)
 
 
